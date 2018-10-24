@@ -49,15 +49,14 @@ export default function HeadingEdit( {
 				onMerge={ mergeBlocks }
 				onSplit={
 					insertBlocksAfter ?
-						( before, after, ...blocks ) => {
-							setAttributes( { content: before } );
+						( value ) => {
 							insertBlocksAfter( [
-								...blocks,
-								createBlock( 'core/paragraph', { content: after } ),
+								createBlock( 'core/paragraph', { content: value } ),
 							] );
 						} :
 						undefined
 				}
+				onPasteBlocks={ insertBlocksAfter }
 				onRemove={ () => onReplace( [] ) }
 				style={ { textAlign: align } }
 				className={ className }
