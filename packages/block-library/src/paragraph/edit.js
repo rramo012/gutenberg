@@ -54,7 +54,7 @@ class ParagraphBlock extends Component {
 
 		this.onReplace = this.onReplace.bind( this );
 		this.toggleDropCap = this.toggleDropCap.bind( this );
-		this.onSplit = this.onSplit.bind( this );
+		this.onInsertAfter = this.onInsertAfter.bind( this );
 	}
 
 	onReplace( blocks ) {
@@ -80,7 +80,7 @@ class ParagraphBlock extends Component {
 		return checked ? __( 'Showing large initial letter.' ) : __( 'Toggle to show a large initial letter.' );
 	}
 
-	onSplit( value ) {
+	onInsertAfter( value ) {
 		this.props.insertBlocksAfter( [
 			createBlock( name, { content: value } ),
 		] );
@@ -205,7 +205,7 @@ class ParagraphBlock extends Component {
 							content: nextContent,
 						} );
 					} }
-					onSplit={ insertBlocksAfter ? this.onSplit : undefined }
+					onInsertAfter={ insertBlocksAfter ? this.onInsertAfter : undefined }
 					onPasteBlocks={ insertBlocksAfter }
 					onMerge={ mergeBlocks }
 					onReplace={ this.onReplace }

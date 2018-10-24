@@ -47,7 +47,7 @@ export default function HeadingEdit( {
 				value={ content }
 				onChange={ ( value ) => setAttributes( { content: value } ) }
 				onMerge={ mergeBlocks }
-				onSplit={
+				onInsertAfter={
 					insertBlocksAfter ?
 						( value ) => {
 							insertBlocksAfter( [

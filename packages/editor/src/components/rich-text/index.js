@@ -338,7 +338,7 @@ export class RichText extends Component {
 			if ( shouldReplace ) {
 				// Necessary to allow the paste bin to be removed without errors.
 				this.props.setTimeout( () => this.props.onReplace( content ) );
-			} else if ( this.props.onSplit ) {
+			} else if ( this.props.onInsertAfter ) {
 				// Necessary to get the right range.
 				// Also done in the TinyMCE paste plugin.
 				this.props.setTimeout( () => this.onPasteBlocks( content ) );
@@ -368,14 +368,14 @@ export class RichText extends Component {
 		}
 
 		const canReplace = this.props.onReplace && this.isEmpty();
-		const canSplit = !! this.props.onSplit;
-		const canPasteBlocks = !! this.props.onPasteBlocks;
+		const canInsertAfter = !! this.props.onInsertAfter;
+		const canPasteBlocks = !! this.props.onPasteBlocks && canInsertAfter;
 
 		let mode = 'INLINE';
 
 		if ( canReplace ) {
 			mode = 'BLOCKS';
-		} else if ( canSplit && canPasteBlocks ) {
+		} else if ( canPasteBlocks ) {
 			mode = 'AUTO';
 		}
 
@@ -615,7 +615,7 @@ export class RichText extends Component {
 	 */
 	onKeyDown( event ) {
 		const { keyCode } = event;
-		const { onSplit } = this.props;
+		const { onInsertAfter } = this.props;
 
 		const isHorizontalNavigation = keyCode === LEFT || keyCode === RIGHT;
 		if ( isHorizontalNavigation ) {
@@ -663,7 +663,7 @@ export class RichText extends Component {
 		}
 
 		// If we click shift+Enter on inline RichTexts, we avoid creating two contenteditables
-		// We also split the content and call the onSplit prop if provided.
+		// We also split the content and call the onInsertAfter prop if provided.
 		if ( keyCode === ENTER ) {
 			event.preventDefault();
 			// It's important that we stop other handlers (e.g. ones registered
@@ -687,14 +687,14 @@ export class RichText extends Component {
 			}
 
 			if ( this.multilineTag ) {
-				if ( onSplit && isEmptyLine( record ) ) {
+				if ( onInsertAfter && isEmptyLine( record ) ) {
 					const [ before, after ] = split( record );
-					onSplit( this.valueToFormat( after ) );
+					onInsertAfter( this.valueToFormat( after ) );
 					this.onChange( before );
 				} else {
 					this.onChange( insertLineSeparator( record ) );
 				}
-			} else if ( event.shiftKey || ! onSplit ) {
+			} else if ( event.shiftKey || ! onInsertAfter ) {
 				const text = getTextContent( record );
 				const length = text.length;
 				let toInsert = '\n';
@@ -712,7 +712,7 @@ export class RichText extends Component {
 				this.onChange( insert( record, toInsert ) );
 			} else {
 				const [ before, after ] = split( record );
-				onSplit( this.valueToFormat( after ) );
+				onInsertAfter( this.valueToFormat( after ) );
 				this.onChange( before );
 			}
 		}
@@ -766,33 +766,34 @@ export class RichText extends Component {
 	}
 
 	/**
-	 * Splits the content at the location of the selection.
+	 * Splits the content at the location of the selection and inserts pasted
+	 * blocks.
 	 *
 	 * Replaces the content of the editor inside this element with the contents
-	 * before the selection. Sends the elements after the selection to the `onSplit`
-	 * handler.
+	 * before the selection. Sends the elements after the selection to the
+	 * `onInsertAfter` handler.
 	 *
 	 * @param {Array}  blocks  The blocks to add after the split point.
 	 * @param {Object} context The context for splitting.
 	 */
 	onPasteBlocks( blocks = [] ) {
-		const { onSplit, onRemove, onPasteBlocks } = this.props;
-		const [ before, after ] = split( this.getRecord() );
+		const { onInsertAfter, onRemove, onPasteBlocks } = this.props;
+		const [ before, after ] = split( this.createRecord() );
 
-		if ( onSplit && ! isEmpty( after ) ) {
-			onSplit( this.valueToFormat( after ) );
+		if ( ! onInsertAfter && ! onPasteBlocks ) {
+			return;
 		}
 
-		if ( onPasteBlocks ) {
-			onPasteBlocks( blocks );
+		if ( ! isEmpty( after ) ) {
+			onInsertAfter( this.valueToFormat( after ) );
 		}
 
-		if ( onSplit ) {
-			if ( ! isEmpty( before ) || ! onRemove ) {
-				this.onChange( before );
-			} else {
-				onRemove();
-			}
+		onPasteBlocks( blocks );
+
+		if ( ! isEmpty( before ) || ! onRemove ) {
+			this.onChange( before );
+		} else {
+			onRemove();
 		}
 	}
 
