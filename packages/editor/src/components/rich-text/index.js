@@ -45,6 +45,7 @@ import {
 	LINE_SEPARATOR,
 	remove,
 	isCollapsed,
+	replace,
 } from '@wordpress/rich-text';
 import { decodeEntities } from '@wordpress/html-entities';
 
@@ -388,8 +389,16 @@ export class RichText extends Component {
 		} );
 
 		if ( typeof content === 'string' ) {
-			this.onChange( insert( record, create( { html: content } ) ) );
-		} else if ( content.length > 0 ) {} {
+			let valueToInsert = create( { html: content } );
+
+			// If the content should be multiline, we should process text
+			// separated by a line break as separate lines.
+			if ( this.multilineTag ) {
+				valueToInsert = replace( valueToInsert, /\n+/g, '\u2028' );
+			}
+
+			this.onChange( insert( record, valueToInsert ) );
+		} else if ( content.length > 0 ) {
 			if ( canReplace ) {
 				this.props.onReplace( content );
 			} else {
