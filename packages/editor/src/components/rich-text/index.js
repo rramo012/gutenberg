@@ -234,7 +234,13 @@ export class RichText extends Component {
 	}
 
 	createRecord() {
-		const range = window.getSelection().getRangeAt( 0 );
+		const selection = window.getSelection();
+
+		if ( selection.rangeCount === 0 ) {
+			return null;
+		}
+
+		const range = selection.getRangeAt( 0 );
 
 		return create( {
 			element: this.editableRef,
@@ -407,6 +413,11 @@ export class RichText extends Component {
 	 */
 	onInput() {
 		const record = this.createRecord();
+
+		if ( ! record ) {
+			return;
+		}
+
 		const transformed = this.patterns.reduce( ( accumlator, transform ) => transform( accumlator ), record );
 
 		// Don't apply changes if there's no transform. Content will be up to
@@ -424,7 +435,12 @@ export class RichText extends Component {
 			return;
 		}
 
-		const { start, end, formats } = this.createRecord();
+		const record = this.createRecord();
+		if ( ! record ) {
+			return;
+		}
+
+		const { start, end, formats } = record;
 
 		if ( formats[ start ] ) {
 			this.props.onEnterFormattedText();
@@ -473,7 +489,11 @@ export class RichText extends Component {
 		// input event. Avoid dispatching an action if the original event is
 		// blur because the content will already be up-to-date.
 		if ( ! event || ! event.originalEvent || event.originalEvent.type !== 'blur' ) {
-			this.onChange( this.createRecord(), true );
+			const record = this.createRecord();
+
+			if ( record ) {
+				this.onChange( record, true );
+			}
 		}
 
 		this.props.onCreateUndoLevel();
@@ -662,7 +682,11 @@ export class RichText extends Component {
 		// The input event does not fire when the whole field is selected and
 		// BACKSPACE is pressed.
 		if ( keyCode === BACKSPACE ) {
-			this.onChange( this.createRecord(), true );
+			const record = this.createRecord();
+
+			if ( record ) {
+				this.onChange( record, true );
+			}
 		}
 
 		// `scrollToRect` is called on `nodechange`, whereas calling it on
@@ -714,7 +738,7 @@ export class RichText extends Component {
 		const { onSplit } = this.props;
 		const record = this.createRecord();
 
-		if ( ! onSplit ) {
+		if ( ! onSplit || ! record ) {
 			return;
 		}
 
