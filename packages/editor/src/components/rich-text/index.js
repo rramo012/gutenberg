@@ -475,7 +475,7 @@ export class RichText extends Component {
 		}
 
 		// Filter out annotations
-		const filteredRecord = removeFormat( record, 'mark', 0, record.text.length );
+		const filteredRecord = removeFormat( record, 'core/annotation', 0, record.text.length );
 
 		const { start, end } = filteredRecord;
 
@@ -870,7 +870,7 @@ export class RichText extends Component {
 			.forEach( ( { start, end, className } ) => {
 				record = applyFormat(
 					record,
-					{ type: 'mark', attributes: { class: className } },
+					{ type: 'core/annotation', attributes: { className } },
 					start,
 					end
 				);
