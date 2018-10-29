@@ -493,6 +493,16 @@ class WP_Block_Parser {
 	}
 
 	static function ucs2length( $string ) {
-		return (int) strlen( iconv( 'UTF-8', 'UTF-16le', $string ) ) / 2;
+		if ( function_exists( 'iconv' ) ) {
+			return (int) strlen( iconv( 'UTF-8', 'UTF-16LE', $string ) ) / 2;
+		}
+
+		if ( function_exists( 'iconv_fallback' ) ) {
+			return (int) strlen( iconv_fallback( 'UTF-8', 'UTF16-LE', $string ) );
+		}
+
+		// what should we do here?
+		// this is wrong.
+		return (int) strlen( $string );
 	}
 }
