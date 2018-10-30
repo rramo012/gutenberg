@@ -1482,22 +1482,6 @@
     // The `maybeJSON` function is not needed in PHP because its return semantics
     // are the same as `json_decode`
 
-    if ( ! function_exists( 'ucs2length' ) ) {
-        function ucs2length( $string ) {
-            if ( function_exists( 'iconv' ) ) {
-                return (int) strlen( iconv( 'UTF-8', 'UTF-16LE', $string ) ) / 2;
-            }
-
-            if ( function_exists( 'iconv_fallback' ) ) {
-                return (int) strlen( iconv_fallback( 'UTF-8', 'UTF16-LE', $string ) );
-            }
-
-            // what should we do here?
-            // this is wrong.
-            return (int) strlen( $string );
-        }
-    }
-
     // array arguments are backwards because of PHP
     if ( ! function_exists( 'peg_array_partition' ) ) {
         function peg_array_partition( $array ) {
@@ -1508,7 +1492,7 @@
 
             foreach ( $array as $item ) {
                 if ( is_string( $item ) ) {
-                    $offset  += ucs2length( $item );
+                    $offset  += strlen( $item );
                     $truthy[] = $item;
                 } else {
                     $markers[] = $offset;
@@ -1605,12 +1589,63 @@
         }
     }
 
+    /**
+     * Returns bytes required to represent given string in UTF8
+     *
+     * Assumes input is encoded in UCS2 or UTF16 according to the ECMAScript spec
+     * @see: https://www.ecma-international.org/ecma-262/9.0/index.html#sec-ecmascript-language-types-string-type
+     *
+     * Transparently counts bytes for invalid encodings:
+     * e.g. unpaired surrogate pair characters count as three bytes
+     *
+     * @cite: https://stackoverflow.com/a/34920444
+     *
+     * @param {string} s input string
+     */
+    function utf8bytes( s ) {
+        var i, l, n = 0;
+
+        for ( i = 0, l = s.length; i < l; i++ ) {
+            var lo, hi = s.charCodeAt(i);
+
+            if ( hi < 0x0080) { // [0x0000, 0x007F]
+                n += 1;
+            } else if ( hi < 0x0800 ) { // [0x0080, 0x07FF]
+                n += 2;
+            } else if ( hi < 0xD800 ) { // [0x0800, 0xD7FF]
+                n += 3;
+            } else if ( hi < 0xDC00 ) { // [0xD800, 0xDBFF]
+                lo = s.charCodeAt( ++i );
+
+                if ( i < l && lo >= 0xDC00 && lo <= 0xDFFF ) { //followed by [0xDC00, 0xDFFF]
+                    n += 4;
+                } else {
+                    // this is an invalid string with an unpaired surrogate.
+                    // transparently pass it through for byte counts
+                    // and back up to restart processing at the next character.
+                    n += 3;
+                    i -= 1;
+                }
+            } else if ( hi < 0xE000 ) { //[0xDC00, 0xDFFF]
+                // these are invalid encodings in the Unicode standard
+                // because they are reserved for encoding surrogate pairs.
+                // transparently pass them through here for byte counts.
+                n += 3;
+            } else { // [0xE000, 0xFFFF]
+                n += 3;
+            }
+        }
+
+        return n;
+    }
+
     function partition( list ) {
         var i, l, item;
         var truthy = [];
         var falsey = [];
         var markers = [];
         var offset = 0;
+        var string = '';
 
         // nod to performance over a simpler reduce
         // and clone model we could have taken here
@@ -1618,13 +1653,19 @@
             item = list[ i ];
 
             if ( 'string' === typeof item ) {
-                offset += item.length;
-                truthy.push( item );
+                string += item;
             } else {
+                offset += utf8bytes( string );
+                truthy.push( string );
                 markers.push( offset );
                 falsey.push( item );
+                string = '';
             }
         };
+
+        if ( string !== '' ) {
+            truthy.push( string );
+        }
 
         return [ truthy, falsey, markers ];
     }

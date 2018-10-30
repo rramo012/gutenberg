@@ -1442,22 +1442,6 @@ class Gutenberg_PEG_Parser {
     // The `maybeJSON` function is not needed in PHP because its return semantics
     // are the same as `json_decode`
 
-    if ( ! function_exists( 'ucs2length' ) ) {
-        function ucs2length( $string ) {
-            if ( function_exists( 'iconv' ) ) {
-                return (int) strlen( iconv( 'UTF-8', 'UTF-16LE', $string ) ) / 2;
-            }
-
-            if ( function_exists( 'iconv_fallback' ) ) {
-                return (int) strlen( iconv_fallback( 'UTF-8', 'UTF16-LE', $string ) );
-            }
-
-            // what should we do here?
-            // this is wrong.
-            return (int) strlen( $string );
-        }
-    }
-
     // array arguments are backwards because of PHP
     if ( ! function_exists( 'peg_array_partition' ) ) {
         function peg_array_partition( $array ) {
@@ -1468,7 +1452,7 @@ class Gutenberg_PEG_Parser {
 
             foreach ( $array as $item ) {
                 if ( is_string( $item ) ) {
-                    $offset  += ucs2length( $item );
+                    $offset  += strlen( $item );
                     $truthy[] = $item;
                 } else {
                     $markers[] = $offset;

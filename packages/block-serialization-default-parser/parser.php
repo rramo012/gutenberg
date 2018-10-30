@@ -49,7 +49,7 @@ class WP_Block_Parser_Block {
 	public $innerHTML;
 
 	/**
-	 * Indices into innerHTML where innerBlocks were found, UCS2-length indices
+	 * Bytes into `innerHTML` where inner blocks were found, assumed UTF8 encoding
 	 *
 	 * @since 5.0.0
 	 * @var int[]
@@ -461,7 +461,7 @@ class WP_Block_Parser {
 			: 0;
 
 		$parent->block->innerBlocks[] = $block;
-		$parent->block->blockMarkers[] = $prev_length + self::ucs2length( $next_html );
+		$parent->block->blockMarkers[] = $prev_length + strlen( $next_html );
 		$parent->block->innerHTML .= $next_html;
 		$parent->prev_offset = $last_offset ? $last_offset : $token_start + $token_length;
 	}
@@ -490,19 +490,5 @@ class WP_Block_Parser {
 		}
 
 		$this->output[] = (array) $stack_top->block;
-	}
-
-	static function ucs2length( $string ) {
-		if ( function_exists( 'iconv' ) ) {
-			return (int) strlen( iconv( 'UTF-8', 'UTF-16LE', $string ) ) / 2;
-		}
-
-		if ( function_exists( 'iconv_fallback' ) ) {
-			return (int) strlen( iconv_fallback( 'UTF-8', 'UTF16-LE', $string ) );
-		}
-
-		// what should we do here?
-		// this is wrong.
-		return (int) strlen( $string );
 	}
 }
