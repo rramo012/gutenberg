@@ -267,7 +267,7 @@ class Gutenberg_PEG_Parser {
         );
         }
     private function peg_f4($s, $children, $e) {
-        list( $innerHTML, $innerBlocks, $blockMarkers ) = peg_array_partition( $children );
+        list( $innerHTML, $innerBlocks, $blockMarkers ) = peg_split_inner_content( $children );
 
         return array(
           'blockName'    => $s['blockName'],
@@ -1443,24 +1443,31 @@ class Gutenberg_PEG_Parser {
     // are the same as `json_decode`
 
     // array arguments are backwards because of PHP
-    if ( ! function_exists( 'peg_array_partition' ) ) {
-        function peg_array_partition( $array ) {
-            $truthy  = array();
-            $falsey  = array();
-            $markers = array();
-            $offset  = 0;
+    if ( ! function_exists( 'peg_split_inner_content' ) ) {
+        function peg_split_inner_content( $array ) {
+            $strings  = array();
+            $blocks   = array();
+            $markers  = array();
+            $offset   = 0;
+            $string   = '';
 
             foreach ( $array as $item ) {
                 if ( is_string( $item ) ) {
-                    $offset  += strlen( $item );
-                    $truthy[] = $item;
+                    $string .= $item;
                 } else {
+                    $offset   += strlen( $string );
+                    $strings[] = $string;
                     $markers[] = $offset;
-                    $falsey[]  = $item;
+                    $blocks[]  = $item;
+                    $string    = '';
                 }
             }
 
-            return array( $truthy, $falsey, $markers );
+            if ( $string !== '' ) {
+                $strings[] = $string;
+            }
+
+            return array( $strings, $blocks, $markers );
         }
     }
 

@@ -51,24 +51,31 @@
 // are the same as `json_decode`
 
 // array arguments are backwards because of PHP
-if ( ! function_exists( 'peg_array_partition' ) ) {
-    function peg_array_partition( $array ) {
-        $truthy  = array();
-        $falsey  = array();
-        $markers = array();
-        $offset  = 0;
+if ( ! function_exists( 'peg_split_inner_content' ) ) {
+    function peg_split_inner_content( $array ) {
+        $strings  = array();
+        $blocks   = array();
+        $markers  = array();
+        $offset   = 0;
+        $string   = '';
 
         foreach ( $array as $item ) {
             if ( is_string( $item ) ) {
-                $offset  += strlen( $item );
-                $truthy[] = $item;
+                $string .= $item;
             } else {
+                $offset   += strlen( $string );
+                $strings[] = $string;
                 $markers[] = $offset;
-                $falsey[]  = $item;
+                $blocks[]  = $item;
+                $string    = '';
             }
         }
 
-        return array( $truthy, $falsey, $markers );
+        if ( $string !== '' ) {
+            $strings[] = $string;
+        }
+
+        return array( $strings, $blocks, $markers );
     }
 }
 
@@ -169,12 +176,13 @@ function maybeJSON( s ) {
  * @cite: https://stackoverflow.com/a/34920444
  *
  * @param {string} s input string
+ * @return {number} how many bytes are in the UTF8 representation of the given string
  */
 function utf8bytes( s ) {
     var i, l, n = 0;
 
     for ( i = 0, l = s.length; i < l; i++ ) {
-        var lo, hi = s.charCodeAt(i);
+        var lo, hi = s.charCodeAt( i );
 
         if ( hi < 0x0080) { // [0x0000, 0x007F]
             n += 1;
@@ -207,10 +215,10 @@ function utf8bytes( s ) {
     return n;
 }
 
-function partition( list ) {
+function splitInnerContent( list ) {
     var i, l, item;
-    var truthy = [];
-    var falsey = [];
+    var strings = [];
+    var blocks = [];
     var markers = [];
     var offset = 0;
     var string = '';
@@ -224,18 +232,18 @@ function partition( list ) {
             string += item;
         } else {
             offset += utf8bytes( string );
-            truthy.push( string );
+            strings.push( string );
             markers.push( offset );
-            falsey.push( item );
+            blocks.push( item );
             string = '';
         }
     };
 
     if ( string !== '' ) {
-        truthy.push( string );
+        strings.push( string );
     }
 
-    return [ truthy, falsey, markers ];
+    return [ strings, blocks, markers ];
 }
 
 }
@@ -287,7 +295,7 @@ Block_Balanced
   = s:Block_Start children:(Block / $(!Block_End .))* e:Block_End
   {
     /** <?php
-    list( $innerHTML, $innerBlocks, $blockMarkers ) = peg_array_partition( $children );
+    list( $innerHTML, $innerBlocks, $blockMarkers ) = peg_split_inner_content( $children );
 
     return array(
       'blockName'    => $s['blockName'],
@@ -298,7 +306,7 @@ Block_Balanced
     );
     ?> **/
 
-    var innerContent = partition( children );
+    var innerContent = splitInnerContent( children );
     var innerHTML = innerContent[ 0 ];
     var innerBlocks = innerContent[ 1 ];
     var blockMarkers = innerContent[ 2 ];
