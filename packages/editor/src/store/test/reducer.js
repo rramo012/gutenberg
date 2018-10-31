@@ -2256,14 +2256,14 @@ describe( 'state', () => {
 		it( 'returns all annotations and annotation IDs per block', () => {
 			const state = annotations( undefined, {} );
 
-			expect( state ).toEqual( { all: [], byBlockId: {} } );
+			expect( state ).toEqual( { all: [], byBlockClientId: {} } );
 		} );
 
 		it( 'returns a state with an annotation that has been added', () => {
 			const state = annotations( undefined, {
 				type: 'ANNOTATION_ADD',
 				id: 'annotationId',
-				block: 'blockId',
+				blockClientId: 'blockClientId',
 				source: 'default',
 				isBlockAnnotation: true,
 			} );
@@ -2272,7 +2272,7 @@ describe( 'state', () => {
 				all: [
 					{
 						id: 'annotationId',
-						block: 'blockId',
+						blockClientId: 'blockClientId',
 						source: 'default',
 						isBlockAnnotation: true,
 						startXPath: undefined,
@@ -2281,8 +2281,8 @@ describe( 'state', () => {
 						endOffset: undefined,
 					},
 				],
-				byBlockId: {
-					blockId: [ 'annotationId' ],
+				byBlockClientId: {
+					blockClientId: [ 'annotationId' ],
 				},
 			} );
 		} );
@@ -2292,7 +2292,7 @@ describe( 'state', () => {
 				all: [
 					{
 						id: 'annotationId',
-						block: 'blockId',
+						blockClientId: 'blockClientId',
 						source: 'default',
 						isBlockAnnotation: true,
 						startXPath: undefined,
@@ -2301,21 +2301,21 @@ describe( 'state', () => {
 						endOffset: undefined,
 					},
 				],
-				byBlockId: {
-					blockId: [ 'annotationId' ],
+				byBlockClientId: {
+					blockClientId: [ 'annotationId' ],
 				},
 			}, {
 				type: 'ANNOTATION_REMOVE',
 				annotationId: 'annotationId',
 			} );
 
-			expect( state ).toEqual( { all: [], byBlockId: { blockId: [] } } );
+			expect( state ).toEqual( { all: [], byBlockClientId: { blockClientId: [] } } );
 		} );
 
 		it( 'allows an annotation to be removed by its source', () => {
 			const annotation1 = {
 				id: 'annotationId',
-				block: 'blockId',
+				blockClientId: 'blockClientId',
 				source: 'default',
 				isBlockAnnotation: true,
 				startXPath: undefined,
@@ -2325,7 +2325,7 @@ describe( 'state', () => {
 			};
 			const annotation2 = {
 				id: 'annotationId2',
-				block: 'blockId2',
+				blockClientId: 'blockClientId2',
 				source: 'other-source',
 				isBlockAnnotation: true,
 				startXPath: undefined,
@@ -2338,9 +2338,9 @@ describe( 'state', () => {
 					annotation1,
 					annotation2,
 				],
-				byBlockId: {
-					blockId: [ 'annotationId' ],
-					blockId2: [ 'annotationId2' ],
+				byBlockClientId: {
+					blockClientId: [ 'annotationId' ],
+					blockClientId2: [ 'annotationId2' ],
 				},
 			}, {
 				type: 'ANNOTATION_REMOVE_SOURCE',
@@ -2349,9 +2349,9 @@ describe( 'state', () => {
 
 			expect( state ).toEqual( {
 				all: [ annotation2 ],
-				byBlockId: {
-					blockId: [],
-					blockId2: [ 'annotationId2' ],
+				byBlockClientId: {
+					blockClientId: [],
+					blockClientId2: [ 'annotationId2' ],
 				},
 			} );
 		} );
